@@ -1,0 +1,5 @@
+.footer {
+  text-align: left;
+  flex-shrink: 0;
+  width: 100%;
+}

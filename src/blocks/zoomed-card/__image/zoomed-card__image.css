@@ -1,0 +1,7 @@
+.zoomed-card__image {
+  margin-bottom: 10px;
+  max-height: 75vh;
+  max-width: 75vw;
+  height: 100%;
+  width: 100%;
+}
