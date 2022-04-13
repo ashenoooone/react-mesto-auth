@@ -9,7 +9,9 @@ import { CurrentUserContext } from './contexts/CurrentUserContext';
 import EditProfilePopup from './components/EditProfilePopup';
 import EditAvatarPopup from './components/EditAvatarPopup';
 import AddPlacePopup from './components/AddPlacePopup';
-import { Router } from 'react-router-dom';
+import { Route, Routes } from 'react-router-dom';
+import Register from './components/Register';
+import Login from './components/Login';
 function App() {
   const [currentUser, setCurrentUser] = React.useState({});
   const [isEditAvatarPopupOpen, setEditAvatarOpened] = React.useState(false);
@@ -98,16 +100,24 @@ function App() {
     <CurrentUserContext.Provider value={currentUser}>
       <div className='page'>
         <Header />
-        <Main
-          handleEditAvatarClick={handleEditAvatarClick}
-          handleEditProfileClick={handleEditProfileClick}
-          handleAddPlaceClick={handleAddPlaceClick}
-          handleCardClick={handleCardClick}
-          handleCardDelete={handleCardDelete}
-          handleCardLike={handleCardLike}
-          cards={cards}
-        />
-        <Footer />
+        <Routes>
+          <Route
+            path='/'
+            element={
+              <Main
+                handleEditAvatarClick={handleEditAvatarClick}
+                handleEditProfileClick={handleEditProfileClick}
+                handleAddPlaceClick={handleAddPlaceClick}
+                handleCardClick={handleCardClick}
+                handleCardDelete={handleCardDelete}
+                handleCardLike={handleCardLike}
+                cards={cards}
+              />
+            }
+          />
+          <Route path='/login' element={<Login />} />
+          <Route path='/register' element={<Register />} />
+        </Routes>
         <ImagePopup onClose={closeAllPopups} card={selectedCard} />
         <EditAvatarPopup
           onClose={closeAllPopups}
