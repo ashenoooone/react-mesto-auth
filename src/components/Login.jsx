@@ -1,33 +1,26 @@
 import React, { useState } from 'react';
-import AuthApi from '../utils/Auth';
-import InfoTooltip from './InfoTooltip';
 
-const Login = ({ handleLogin, handleInfoToolTip }) => {
+const Login = ({ handleSubmit }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const handleSubmit = (e) => {
+  const onSubmit = (e) => {
     e.preventDefault();
-    AuthApi.signin({ email, password })
-      .then(({ token }) => {
-        localStorage.setItem('jwt', token);
-        handleLogin(token);
-      })
-      .catch(() => {
-        handleInfoToolTip(
-          `Что-то пошло не так!
-        Попробуйте ещё раз.`,
-          true
-        );
-      });
+    handleSubmit(email, password);
+  };
+  const handleEmailChange = (e) => {
+    setEmail(e.target.value);
+  };
+  const handlePasswordChange = (e) => {
+    setPassword(e.target.value);
   };
   return (
     <section className='register'>
       <h1 className='register__title'>Вход</h1>
-      <form className='register__form' onSubmit={handleSubmit}>
+      <form className='register__form' onSubmit={onSubmit}>
         <input
           type='email'
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={handleEmailChange}
           placeholder='Email'
           className='register__input'
         />
@@ -36,7 +29,7 @@ const Login = ({ handleLogin, handleInfoToolTip }) => {
           placeholder='Пароль'
           className='register__input'
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={handlePasswordChange}
         />
         <button type='submit' className='register__submit-button'>
           Войти

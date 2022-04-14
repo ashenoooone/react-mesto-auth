@@ -1,36 +1,27 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import AuthApi from '../utils/Auth';
-import InfoTooltip from './InfoTooltip';
 
-const Register = ({ handleInfoToolTip }) => {
+const Register = ({ handleSubmit }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const navigate = useNavigate();
-  const handleSubmit = (e) => {
+  const onSubmit = (e) => {
     e.preventDefault();
-    AuthApi.signup({ email, password })
-      .then(({ _id, email }) => {
-        handleInfoToolTip(`Вы успешно зарегистрировались!`, false);
-        navigate('/login');
-      })
-      .catch(() => {
-        handleInfoToolTip(
-          `Что-то пошло не так!
-        Попробуйте ещё раз.`,
-          true
-        );
-      });
+    handleSubmit(email, password);
   };
-
+  const handleEmailChange = (e) => {
+    setEmail(e.target.value);
+  };
+  const handlePasswordChange = (e) => {
+    setPassword(e.target.value);
+  };
   return (
     <section className='register'>
       <h1 className='register__title'>Регистрация</h1>
-      <form className='register__form' onSubmit={handleSubmit}>
+      <form className='register__form' onSubmit={onSubmit}>
         <input
           type='email'
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={handleEmailChange}
           placeholder='Email'
           className='register__input'
         />
@@ -38,7 +29,7 @@ const Register = ({ handleInfoToolTip }) => {
           type='password'
           placeholder='Пароль'
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={handlePasswordChange}
           className='register__input'
         />
         <button type='submit' className='register__submit-button'>

@@ -8,6 +8,12 @@ const EditProfilePopup = ({ onUpdateUser, onClose, isOpened }) => {
   const currentUser = React.useContext(CurrentUserContext);
   const [name, setName] = useState(currentUser.name);
   const [about, setAbout] = useState(currentUser.about);
+  const handleNameChange = (e) => {
+    setName(e.target.value);
+  };
+  const handleAboutChange = (e) => {
+    setAbout(e.target.value);
+  };
   const handleSubmit = (e) => {
     e.preventDefault();
     onUpdateUser({
@@ -42,7 +48,7 @@ const EditProfilePopup = ({ onUpdateUser, onClose, isOpened }) => {
           id='name-input'
           minLength='2'
           maxLength='40'
-          onChange={(e) => setName(e.target.value)}
+          onChange={handleNameChange}
         />
         <span className='popup__input-error name-input-error'></span>
         <input
@@ -55,7 +61,7 @@ const EditProfilePopup = ({ onUpdateUser, onClose, isOpened }) => {
           id='activity-input'
           minLength='2'
           maxLength='200'
-          onChange={(e) => setAbout(e.target.value)}
+          onChange={handleAboutChange}
         />
         <span className='popup__input-error activity-input-error'></span>
       </>

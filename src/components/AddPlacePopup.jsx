@@ -5,6 +5,12 @@ import { useState, useEffect } from 'react';
 const AddPlacePopup = ({ onClose, isOpened, handleAddPlaceSubmit }) => {
   const [name, setName] = useState('');
   const [link, setLink] = useState('');
+  const handleLinkChange = (e) => {
+    setLink(e.target.value);
+  };
+  const handleNameChange = (e) => {
+    setName(e.target.value);
+  };
   const onSubmit = (e) => {
     e.preventDefault();
     handleAddPlaceSubmit({ name, link });
@@ -36,7 +42,7 @@ const AddPlacePopup = ({ onClose, isOpened, handleAddPlaceSubmit }) => {
           minLength='2'
           maxLength='30'
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={handleNameChange}
         />
         <span className='popup__input-error title-input-error'></span>
         <input
@@ -47,7 +53,7 @@ const AddPlacePopup = ({ onClose, isOpened, handleAddPlaceSubmit }) => {
           value={link}
           required
           id='link-input'
-          onChange={(e) => setLink(e.target.value)}
+          onChange={handleLinkChange}
         />
         <span className='popup__input-error link-input-error'></span>
       </>

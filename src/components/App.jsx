@@ -1,21 +1,21 @@
 import React from 'react';
-import Footer from './components/Footer';
-import Header from './components/Header';
-import Main from './components/Main';
-import PopupWithForm from './components/PopupWithForm';
-import api from './utils/Api';
-import ImagePopup from './components/ImagePopup';
-import { CurrentUserContext } from './contexts/CurrentUserContext';
-import EditProfilePopup from './components/EditProfilePopup';
-import EditAvatarPopup from './components/EditAvatarPopup';
-import AddPlacePopup from './components/AddPlacePopup';
+import Footer from './Footer';
+import Header from './Header';
+import Main from './Main';
+import PopupWithForm from './PopupWithForm';
+import api from '../utils/Api';
+import ImagePopup from './ImagePopup';
+import { CurrentUserContext } from '../contexts/CurrentUserContext';
+import EditProfilePopup from './EditProfilePopup';
+import EditAvatarPopup from './EditAvatarPopup';
+import AddPlacePopup from './AddPlacePopup';
 import { Route, Routes, useNavigate } from 'react-router-dom';
-import Register from './components/Register';
-import Login from './components/Login';
-import RequierAuth from './hoc/ProtectedRoute';
-import AuthApi from './utils/Auth';
-import IsAlreadyAuth from './hoc/IsAlreadyAuth';
-import InfoTooltip from './components/InfoTooltip';
+import Register from './Register';
+import Login from './Login';
+import RequierAuth from '../hoc/ProtectedRoute';
+import AuthApi from '../utils/Auth';
+import IsAlreadyAuth from '../hoc/IsAlreadyAuth';
+import InfoTooltip from './InfoTooltip';
 function App() {
   const [currentUser, setCurrentUser] = React.useState({});
   const [isEditAvatarPopupOpen, setEditAvatarOpened] = React.useState(false);
@@ -25,8 +25,10 @@ function App() {
   const [selectedCard, setSelectedCard] = React.useState(null);
   const [isLogged, setIsLogged] = React.useState(false);
   const navigate = useNavigate();
-  const [InfoTooltipTitle, setInfoTooltipTitle] = React.useState('');
-  const [InfoTooltipIsError, setInfoTooltipIsError] = React.useState(false);
+  const [InfoTooltipSettings, setInfoTooltipSettings] = React.useState({
+    title: '',
+    error: false,
+  });
   const [isInfoTooltipOpen, setInfoTooltipOpen] = React.useState(false);
   function handleEditAvatarClick() {
     setEditAvatarOpened(true);
@@ -38,12 +40,6 @@ function App() {
 
   function handleAddPlaceClick() {
     setAddPlaceOpened(true);
-  }
-
-  function handleInfoToolTip(title, error) {
-    setInfoTooltipOpen(true);
-    setInfoTooltipTitle(title);
-    setInfoTooltipIsError(error);
   }
 
   function handleCardClick(obj) {
@@ -59,11 +55,32 @@ function App() {
       .catch((e) => console.error(e));
   }
 
+  function handleLoginSubmit(email, password) {
+    AuthApi.signin({ email, password })
+      .then(({ token }) => {
+        localStorage.setItem('jwt', token);
+        handleLogin(token);
+      })
+      .catch(() => {
+        setInfoTooltipSettings({
+          title: `Что-то пошло не так!
+        Попробуйте ещё раз.`,
+          error: true,
+        });
+        setInfoTooltipOpen(true);
+      });
+  }
+
   function handleLogin(token) {
-    AuthApi.tokenCheck(token).then(({ data }) => {
+    Promise.all([
+      AuthApi.tokenCheck(token),
+      api.getInitialCards(),
+      api.getInitialProfileInfo(),
+    ]).then(([{ data }, cards, user]) => {
       setIsLogged(true);
       navigate('/');
-      setCurrentUser({ ...currentUser, _id: data._id, email: data.email });
+      setCurrentUser({ ...data, ...user, ...currentUser });
+      setCards(cards);
     });
   }
 
@@ -103,9 +120,9 @@ function App() {
           setIsLogged(true);
           navigate('/');
           setCurrentUser({
+            ...data,
             ...user,
             ...currentUser,
-            ...data,
           });
           setCards(cards);
         })
@@ -116,6 +133,7 @@ function App() {
   const handleLogout = () => {
     setIsLogged(false);
     localStorage.removeItem('jwt');
+    setCurrentUser({});
   };
 
   const handleCardDelete = (card) => {
@@ -138,6 +156,26 @@ function App() {
       })
       .catch((e) => console.error(e));
   };
+
+  function handleRegisterSubmit(email, password) {
+    AuthApi.signup({ email, password })
+      .then(() => {
+        setInfoTooltipSettings({
+          title: `Вы успешно зарегистрировались!`,
+          error: false,
+        });
+        setInfoTooltipOpen(true);
+        navigate('/login');
+      })
+      .catch(() => {
+        setInfoTooltipSettings({
+          title: `Что-то пошло не так!
+        Попробуйте ещё раз.`,
+          error: true,
+        });
+        setInfoTooltipOpen(true);
+      });
+  }
 
   return (
     <CurrentUserContext.Provider value={currentUser}>
@@ -168,10 +206,7 @@ function App() {
             path='login'
             element={
               <IsAlreadyAuth isLogged={isLogged}>
-                <Login
-                  handleInfoToolTip={handleInfoToolTip}
-                  handleLogin={handleLogin}
-                />
+                <Login handleSubmit={handleLoginSubmit} />
               </IsAlreadyAuth>
             }
           />
@@ -179,7 +214,7 @@ function App() {
             path='register'
             element={
               <IsAlreadyAuth isLogged={isLogged}>
-                <Register handleInfoToolTip={handleInfoToolTip} />
+                <Register handleSubmit={handleRegisterSubmit} />
               </IsAlreadyAuth>
             }
           />
@@ -208,9 +243,9 @@ function App() {
           handleAddPlaceSubmit={handleAddPlaceSubmit}
         />
         <InfoTooltip
-          title={InfoTooltipTitle}
+          title={InfoTooltipSettings.title}
           isOpened={isInfoTooltipOpen}
-          isError={InfoTooltipIsError}
+          isError={InfoTooltipSettings.error}
           onClose={closeAllPopups}
           name='info-tooltip'
         />
