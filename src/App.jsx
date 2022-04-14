@@ -9,9 +9,13 @@ import { CurrentUserContext } from './contexts/CurrentUserContext';
 import EditProfilePopup from './components/EditProfilePopup';
 import EditAvatarPopup from './components/EditAvatarPopup';
 import AddPlacePopup from './components/AddPlacePopup';
-import { Route, Routes } from 'react-router-dom';
+import { Route, Routes, useNavigate } from 'react-router-dom';
 import Register from './components/Register';
 import Login from './components/Login';
+import RequierAuth from './hoc/ProtectedRoute';
+import AuthApi from './utils/Auth';
+import IsAlreadyAuth from './hoc/IsAlreadyAuth';
+import InfoTooltip from './components/InfoTooltip';
 function App() {
   const [currentUser, setCurrentUser] = React.useState({});
   const [isEditAvatarPopupOpen, setEditAvatarOpened] = React.useState(false);
@@ -19,6 +23,11 @@ function App() {
   const [isAddCardPopupOpen, setAddPlaceOpened] = React.useState(false);
   const [cards, setCards] = React.useState([]);
   const [selectedCard, setSelectedCard] = React.useState(null);
+  const [isLogged, setIsLogged] = React.useState(false);
+  const navigate = useNavigate();
+  const [InfoTooltipTitle, setInfoTooltipTitle] = React.useState('');
+  const [InfoTooltipIsError, setInfoTooltipIsError] = React.useState(false);
+  const [isInfoTooltipOpen, setInfoTooltipOpen] = React.useState(false);
   function handleEditAvatarClick() {
     setEditAvatarOpened(true);
   }
@@ -29,6 +38,12 @@ function App() {
 
   function handleAddPlaceClick() {
     setAddPlaceOpened(true);
+  }
+
+  function handleInfoToolTip(title, error) {
+    setInfoTooltipOpen(true);
+    setInfoTooltipTitle(title);
+    setInfoTooltipIsError(error);
   }
 
   function handleCardClick(obj) {
@@ -42,6 +57,14 @@ function App() {
         setCards([res, ...cards]);
       })
       .catch((e) => console.error(e));
+  }
+
+  function handleLogin(token) {
+    AuthApi.tokenCheck(token).then(({ data }) => {
+      setIsLogged(true);
+      navigate('/');
+      setCurrentUser({ ...currentUser, _id: data._id, email: data.email });
+    });
   }
 
   function handleUpdateUser(obj) {
@@ -64,17 +87,36 @@ function App() {
     setEditAvatarOpened(false);
     setEditProfileOpened(false);
     setAddPlaceOpened(false);
+    setInfoTooltipOpen(false);
     setSelectedCard(null);
   }
 
   React.useEffect(() => {
-    Promise.all([api.getInitialCards(), api.getInitialProfileInfo()])
-      .then(([cards, user]) => {
-        setCurrentUser(user);
-        setCards(cards);
-      })
-      .catch((e) => console.error(e));
+    const jwt = localStorage.getItem('jwt');
+    if (jwt) {
+      Promise.all([
+        api.getInitialCards(),
+        api.getInitialProfileInfo(),
+        AuthApi.tokenCheck(jwt),
+      ])
+        .then(([cards, user, { data }]) => {
+          setIsLogged(true);
+          navigate('/');
+          setCurrentUser({
+            ...user,
+            ...currentUser,
+            ...data,
+          });
+          setCards(cards);
+        })
+        .catch((e) => console.error(e));
+    }
   }, []);
+
+  const handleLogout = () => {
+    setIsLogged(false);
+    localStorage.removeItem('jwt');
+  };
 
   const handleCardDelete = (card) => {
     api
@@ -96,27 +138,51 @@ function App() {
       })
       .catch((e) => console.error(e));
   };
+
   return (
     <CurrentUserContext.Provider value={currentUser}>
       <div className='page'>
-        <Header />
+        <Header
+          isLogged={isLogged}
+          handleLogout={handleLogout}
+          currentUser={currentUser}
+        />
         <Routes>
           <Route
             path='/'
             element={
-              <Main
-                handleEditAvatarClick={handleEditAvatarClick}
-                handleEditProfileClick={handleEditProfileClick}
-                handleAddPlaceClick={handleAddPlaceClick}
-                handleCardClick={handleCardClick}
-                handleCardDelete={handleCardDelete}
-                handleCardLike={handleCardLike}
-                cards={cards}
-              />
+              <RequierAuth isLogged={isLogged}>
+                <Main
+                  handleEditAvatarClick={handleEditAvatarClick}
+                  handleEditProfileClick={handleEditProfileClick}
+                  handleAddPlaceClick={handleAddPlaceClick}
+                  handleCardClick={handleCardClick}
+                  handleCardDelete={handleCardDelete}
+                  handleCardLike={handleCardLike}
+                  cards={cards}
+                />
+              </RequierAuth>
             }
           />
-          <Route path='/login' element={<Login />} />
-          <Route path='/register' element={<Register />} />
+          <Route
+            path='login'
+            element={
+              <IsAlreadyAuth isLogged={isLogged}>
+                <Login
+                  handleInfoToolTip={handleInfoToolTip}
+                  handleLogin={handleLogin}
+                />
+              </IsAlreadyAuth>
+            }
+          />
+          <Route
+            path='register'
+            element={
+              <IsAlreadyAuth isLogged={isLogged}>
+                <Register handleInfoToolTip={handleInfoToolTip} />
+              </IsAlreadyAuth>
+            }
+          />
         </Routes>
         <ImagePopup onClose={closeAllPopups} card={selectedCard} />
         <EditAvatarPopup
@@ -140,6 +206,13 @@ function App() {
           onClose={closeAllPopups}
           isOpened={isAddCardPopupOpen}
           handleAddPlaceSubmit={handleAddPlaceSubmit}
+        />
+        <InfoTooltip
+          title={InfoTooltipTitle}
+          isOpened={isInfoTooltipOpen}
+          isError={InfoTooltipIsError}
+          onClose={closeAllPopups}
+          name='info-tooltip'
         />
       </div>
     </CurrentUserContext.Provider>

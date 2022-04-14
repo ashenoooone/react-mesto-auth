@@ -8,5 +8,14 @@
   font-size: 18px;
   line-height: 22px;
   padding: 14px 88px;
+  cursor: pointer;
   margin-top: auto;
+}
+.register__submit-button:hover {
+  opacity: 0.85;
+}
+@media screen and (max-width: 767px) {
+  .register__submit-button {
+    padding: 14px 35px;
+  }
 }
